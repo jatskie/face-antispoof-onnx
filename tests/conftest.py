@@ -14,10 +14,7 @@ def liveness_session():
     """Load liveness model once for all tests."""
     from src.inference import load_model
 
-    session, input_name = load_model(str(LIVENESS_MODEL))
-    if session is None:
-        pytest.skip("Liveness model not found")
-    return session, input_name
+    return load_model(str(LIVENESS_MODEL))
 
 
 @pytest.fixture(scope="session")
@@ -25,10 +22,7 @@ def face_detector():
     """Load face detector once for all tests."""
     from src.detection import load_detector
 
-    detector = load_detector(str(DETECTOR_MODEL), (640, 480))
-    if detector is None:
-        pytest.skip("Detector model not found")
-    return detector
+    return load_detector(str(DETECTOR_MODEL), (640, 480))
 
 
 @pytest.fixture

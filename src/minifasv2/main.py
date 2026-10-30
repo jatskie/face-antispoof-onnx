@@ -22,8 +22,8 @@ class Trainer:
         self.resume_from = resume_from
         self.transfer_learning = transfer_learning
         self.train_loader, self.valid_loader = get_train_valid(self.config)
-        self.log_train_every = len(self.train_loader) // config.log_loss_per_epoch
-        self.log_valid_every = len(self.valid_loader) // config.log_loss_per_epoch
+        self.log_train_every = max(1, len(self.train_loader) // config.log_loss_per_epoch)
+        self.log_valid_every = max(1, len(self.valid_loader) // config.log_loss_per_epoch)
 
     def train_model(self):
         self._init_model_param()
@@ -459,11 +459,9 @@ class Trainer:
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         self.lr_scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
 
-        saved_epoch = checkpoint["epoch"]
-        if checkpoint.get("batch_idx", None) is not None:
-            self.start_epoch = saved_epoch
-        else:
-            self.start_epoch = saved_epoch - 1
+        # End-of-epoch checkpoints store the next epoch to run; mid-epoch ones store
+        # the interrupted epoch, which restarts from its first batch.
+        self.start_epoch = checkpoint["epoch"]
 
         self.step = checkpoint.get("step", 0)
         self.validation_step = checkpoint.get(

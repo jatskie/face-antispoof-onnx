@@ -15,23 +15,19 @@ import math
 
 def load_image(path):
     img = cv2.imread(path)
+    if img is None:
+        raise FileNotFoundError(f"Could not read image: {path}")
     return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
 
 def generate_FT(image):
+    """Normalized log-magnitude spectrum: the FT branch's training target."""
+    # NOTE: `image` is RGB, so BGR2GRAY swaps the R/B weights. The released models
+    # were trained with this target; keep it unless you intend to retrain.
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    f = np.fft.fft2(image)
-    fshift = np.fft.fftshift(f)
-    fimg = np.log(np.abs(fshift) + 1)
-    maxx = -1
-    minn = 100000
-    for i in range(len(fimg)):
-        if maxx < max(fimg[i]):
-            maxx = max(fimg[i])
-        if minn > min(fimg[i]):
-            minn = min(fimg[i])
-    fimg = (fimg - minn + 1) / (maxx - minn + 1)
-    return fimg
+    fimg = np.log(np.abs(np.fft.fftshift(np.fft.fft2(image))) + 1)
+    lo, hi = fimg.min(), fimg.max()
+    return (fimg - lo + 1) / (hi - lo + 1)
 
 
 class LivenessDataset(Dataset):
@@ -52,15 +48,8 @@ class LivenessDataset(Dataset):
         sample = self.reader(path)
         target = self.labels.iloc[idx, 1]
 
-        if sample is None:
-            print("image is None --> ", path)
-        assert sample is not None
-
         if self.transform is not None:
-            try:
-                sample = self.transform(sample)
-            except Exception as err:
-                print("Error Occured: %s" % err, path)
+            sample = self.transform(sample)
         if self.target_transform is not None:
             target = self.target_transform(target)
         return sample, target
@@ -85,21 +74,12 @@ class LivenessDatasetFT(LivenessDataset):
         target = self.labels.iloc[idx, 1]
 
         fourier_sample = generate_FT(sample)
-        if sample is None:
-            print("image is None --> ", path)
-        if fourier_sample is None:
-            print("FT image is None --> ", path)
-        assert sample is not None
-
         fourier_sample = cv2.resize(fourier_sample, self.fourier_size)
         fourier_sample = torch.from_numpy(fourier_sample).float()
         fourier_sample = torch.unsqueeze(fourier_sample, 0)
 
         if self.transform is not None:
-            try:
-                sample = self.transform(sample)
-            except Exception as err:
-                print("Error occured: %s" % err, path)
+            sample = self.transform(sample)
         if self.target_transform is not None:
             target = self.target_transform(target)
         return sample, fourier_sample, target
@@ -234,9 +214,8 @@ def get_train_valid(config):
 
     valid_transform = T.Compose([T.ToPILImage(), T.ToTensor()])
 
-    processed_dir = os.path.dirname(os.path.dirname(config.labels_path))
     train_labels = load_labels_from_json(
-        config.labels_path, processed_dir, config.spoof_categories, "train"
+        config.labels_path, config.data_dir, config.spoof_categories, "train"
     )
 
     if config.spoof_categories is not None:
@@ -283,13 +262,13 @@ def get_train_valid(config):
         ),
         batch_size=config.batch_size,
         shuffle=True,
-        pin_memory=True,
+        pin_memory=torch.cuda.is_available(),
     )
     valid_data = DataLoader(
         LivenessDataset(config.train_path, valid_labels, valid_transform, None),
         batch_size=config.batch_size,
         shuffle=True,
-        pin_memory=True,
+        pin_memory=torch.cuda.is_available(),
     )
 
     return train_data, valid_data
@@ -299,9 +278,8 @@ def get_test(config):
 
     test_transform = T.Compose([T.ToPILImage(), SquarePad(), T.ToTensor()])
 
-    processed_dir = os.path.dirname(os.path.dirname(config.labels_path))
     test_labels = load_labels_from_json(
-        config.labels_path, processed_dir, config.spoof_categories, "test"
+        config.labels_path, config.data_dir, config.spoof_categories, "test"
     )
 
     if config.spoof_categories is not None:
@@ -319,7 +297,7 @@ def get_test(config):
     test_data = DataLoader(
         LivenessDataset(config.test_path, test_labels, test_transform, None),
         batch_size=config.batch_size,
-        pin_memory=True,
+        pin_memory=torch.cuda.is_available(),
     )
 
     return test_data
