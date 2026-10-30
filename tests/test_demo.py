@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 
 from demo import GREEN, annotate
-from tests.test_golden import FACE_IMAGE
+from tests.conftest import FACE_IMAGE
 
 
 def test_annotate_marks_real_face_green(face_detector, liveness_session):

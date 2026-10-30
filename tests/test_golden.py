@@ -1,32 +1,16 @@
 """Golden-output tests on a real face: catch any refactor that changes model results."""
 
-from pathlib import Path
-
-import cv2
 import numpy as np
 import pytest
 
-from src.detection import detect, load_detector
-from src.inference import crop, load_model, preprocess_batch
+from src.inference import load_model
+from tests.conftest import MODELS_DIR
 
-ROOT = Path(__file__).parent.parent
-FACE_IMAGE = ROOT / "assets/docs/face.jpg"
-MODEL_DIR = ROOT / "models/best/98.20"
+MODEL_DIR = MODELS_DIR / "best/98.20"
 
 # Recorded logits [real, spoof] for FACE_IMAGE before the refactor.
 EXPECTED_FP32 = np.array([4.40475, -4.40492])
 EXPECTED_INT8 = np.array([4.48281, -4.48115])
-
-
-@pytest.fixture(scope="module")
-def face_batch():
-    img = cv2.cvtColor(cv2.imread(str(FACE_IMAGE)), cv2.COLOR_BGR2RGB)
-    detector = load_detector(str(ROOT / "models/detector_quantized.onnx"), (320, 320))
-    faces = detect(img, detector)
-    assert len(faces) == 1
-    b = faces[0]["bbox"]
-    face = crop(img, (b["x"], b["y"], b["x"] + b["width"], b["y"] + b["height"]), 1.5)
-    return preprocess_batch([face], 128)
 
 
 @pytest.mark.parametrize(
