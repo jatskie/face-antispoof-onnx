@@ -96,7 +96,7 @@ def main():
         "--detector_model", default=str(MODELS_DIR / "detector_quantized.onnx")
     )
     parser.add_argument(
-        "--liveness_model", default=str(MODELS_DIR / "best_model_quantized.onnx")
+        "--liveness_model", default=str(MODELS_DIR / "best/98.20/best_model_quantized.onnx")
     )
     args = parser.parse_args()
 
