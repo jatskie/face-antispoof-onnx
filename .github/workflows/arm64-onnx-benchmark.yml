@@ -64,6 +64,8 @@ jobs:
 
       - name: Compare FP32 and INT8 models
         id: armbench
+        # Third-party action (single-maintainer, created 2026-08). Code at this SHA reviewed
+        # 2026-10-30: local ONNX timing only, no network or secret access. Re-review before bumping.
         uses: ILoveBuns/armbench-action@24b0637ba3983b06cfc170b725607c91eb75ec3d
         with:
           baseline-model: models/best/98.20/best_model.onnx

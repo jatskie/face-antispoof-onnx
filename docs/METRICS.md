@@ -2,6 +2,18 @@
 
 Benchmark results on CelebA Spoof (70k+ test samples).
 
+## Reproducing
+
+Prepare the test split with `scripts/prepare_data.py` (`--size 128`), then:
+
+```bash
+python -m scripts.evaluate models/best/98.20/best_model.onnx --crop_dir <prepared_dir>   --output assets/results/metrics/current_best/metrics.json
+```
+
+This writes the accuracy, ROC-AUC, average precision and confusion-matrix fields below
+(real = positive class for ROC-AUC/AP). Plots and timing are not regenerated; see the Arm64
+benchmark workflow for latency.
+
 ## Current Best
 
 ### Regular Model (FP32)

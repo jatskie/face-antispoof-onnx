@@ -205,6 +205,14 @@ python -m scripts.export_onnx <checkpoint_path> \
   --quantize            # also write <path>_quantized.onnx (INT8)
 ```
 
+### 5. Evaluate
+
+```bash
+python -m scripts.evaluate <model.onnx> --crop_dir <prepared_dir> --output metrics.json
+```
+
+See [Reproducing metrics](docs/METRICS.md#reproducing).
+
 ---
 
 ## Development
