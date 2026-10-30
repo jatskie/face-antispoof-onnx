@@ -41,17 +41,10 @@ def test_onnx_golden(face_batch, model_file, expected):
 
 def test_torch_matches_onnx(face_batch):
     torch = pytest.importorskip("torch")
-    from src.minifasv2.model import MultiFTNet
+    from src.minifasv2.model import MultiFTNet, load_weights
 
-    state_dict = torch.load(MODEL_DIR / "best_model.pth", map_location="cpu")[
-        "model_state_dict"
-    ]
     model = MultiFTNet(conv6_kernel=(8, 8))
-    result = model.load_state_dict(state_dict, strict=False)
-    # The shipped .pth has the training-only FT branch stripped; nothing else may be missing.
-    assert all("FTGenerator" in k for k in result.missing_keys)
-    assert not result.unexpected_keys
-
+    load_weights(model, MODEL_DIR / "best_model.pth")
     model.eval()
     with torch.no_grad():
         logits = model(torch.from_numpy(face_batch)).numpy()[0]
