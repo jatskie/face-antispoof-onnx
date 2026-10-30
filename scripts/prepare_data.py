@@ -6,21 +6,18 @@ import argparse
 import os
 import shutil
 from multiprocessing import Pool, cpu_count
-from typing import Tuple
 
 import cv2
 import pandas as pd
 from tqdm import tqdm
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Dataset preparation (crop + resize)")
     p.add_argument("--orig_dir", required=True, help="Path to dataset root")
     p.add_argument("--crop_dir", required=True, help="Output folder for cropped images")
     p.add_argument("--size", type=int, default=224, help="Output image size (square)")
-    p.add_argument(
-        "--bbox_expansion_factor", type=float, default=1.5, help="Crop expansion factor"
-    )
+    p.add_argument("--bbox_expansion_factor", type=float, default=1.5, help="Crop expansion factor")
     p.add_argument(
         "--label_dir",
         default="metas/labels",
@@ -33,10 +30,10 @@ def parse_args() -> argparse.Namespace:
         default=[0, 1, 2, 3, 7, 8, 9],
         help="Keep these label type codes (if applicable)",
     )
-    return p.parse_args()
+    return p.parse_args(argv)
 
 
-def _process_single_image(args_bundle: Tuple[str, str, str, int, float]) -> None:
+def _process_single_image(args_bundle: tuple[str, str, str, int, float]) -> None:
     _, full_img_path, save_path, target_size, bbox_expansion_factor = args_bundle
 
     img = cv2.imread(full_img_path)
@@ -50,7 +47,7 @@ def _process_single_image(args_bundle: Tuple[str, str, str, int, float]) -> None
         return
 
     try:
-        with open(bbox_file, "r", encoding="utf-8") as f:
+        with open(bbox_file, encoding="utf-8") as f:
             line = f.readline().strip().split(" ")
             x_ref, y_ref, w_ref, h_ref = map(float, line[:4])
 
@@ -103,7 +100,7 @@ def _process_single_image(args_bundle: Tuple[str, str, str, int, float]) -> None
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = parse_args() if argv is None else parse_args()
+    args = parse_args(argv)
 
     orig_dir = args.orig_dir
     if not orig_dir.endswith("/") and not orig_dir.endswith("\\"):
@@ -132,9 +129,7 @@ def main(argv: list[str] | None = None) -> int:
         full_img_path = os.path.join(orig_dir, str(index_path))
         rel_path = str(index_path)
         save_path = os.path.join(args.crop_dir, rel_path)
-        tasks.append(
-            (rel_path, full_img_path, save_path, args.size, args.bbox_expansion_factor)
-        )
+        tasks.append((rel_path, full_img_path, save_path, args.size, args.bbox_expansion_factor))
 
     with Pool(cpu_count()) as pool:
         list(tqdm(pool.imap_unordered(_process_single_image, tasks), total=len(tasks)))

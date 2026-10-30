@@ -123,7 +123,7 @@ MobileNetV4 was actually tried first. It worked fine, but:
 | FT supervision | Bolted on | Native |
 | Training | Fiddly (pretrained weights, LR schedules) | Straightforward |
 
-Accuracy was about the same, so the smaller, simpler option won. MobileNetV4 code is still in `src/mobilenetv4/` for anyone wanting to experiment.
+Accuracy was about the same, so the smaller, simpler option won. The MobileNetV4 code was removed; it is in the git history for anyone wanting to experiment.
 
 ## References
 

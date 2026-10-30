@@ -60,3 +60,5 @@ output/
 # Large files (uncomment if needed)
 # *.pth
 # *.onnx
+# Training checkpoints (hundreds of MB; keep locally, publish only models/best/)
+models/checkpoints/

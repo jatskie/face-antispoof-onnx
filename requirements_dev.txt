@@ -1,4 +1,3 @@
-black
-ruff
-pytest
-pytest-cov
+-r requirements_train.txt
+pytest==9.2.0
+ruff==0.17.3
