@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 import pytest
 
-pytest.importorskip("torch")
+torch = pytest.importorskip("torch")
 
 from src.minifasv2.config import TrainConfig  # noqa: E402
 from src.minifasv2.main import Trainer  # noqa: E402
@@ -48,7 +48,26 @@ def test_train_and_resume(dataset):
     assert trainer.step == steps_per_epoch
 
     config = make_config(dataset, epochs=2)
-    resumed = Trainer(config, resume_from=f"{config.model_path}/checkpoint_latest.pth")
-    resumed.train_model()
+    resumed = Trainer(config)
+    resumed._init_model_param()
+    resumed._load_checkpoint(f"{config.model_path}/checkpoint_latest.pth")
+    for key, value in trainer.model.state_dict().items():
+        assert torch.equal(resumed.model.state_dict()[key], value), key
+
+    resumed._train_stage()
     # Resuming after epoch 1 must run only epoch 2, not repeat epoch 1.
     assert resumed.step == 2 * steps_per_epoch
+
+
+def test_resume_from_shipped_checkpoint(dataset):
+    """Checkpoints from the original training run (old field names) still resume."""
+    from pathlib import Path
+
+    checkpoint = Path(__file__).parent.parent / ("models/checkpoints/minifasv2 (128x128)/checkpoint_latest.pth")
+    if not checkpoint.exists():
+        pytest.skip("training checkpoints not present (untracked from git)")
+    trainer = Trainer(make_config(dataset, epochs=1))
+    trainer._init_model_param()
+    trainer._load_checkpoint(checkpoint)
+    assert trainer.start_epoch == 40
+    assert trainer.best_validation_accuracy > 0.9

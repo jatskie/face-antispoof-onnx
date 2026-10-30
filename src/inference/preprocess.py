@@ -45,19 +45,20 @@ def preprocess_batch(face_crops: List[np.ndarray], model_img_size: int) -> np.nd
 
 
 def crop(img: np.ndarray, bbox: tuple, bbox_expansion_factor: float) -> np.ndarray:
-    """Extract square face crop from bbox with expansion. Pad edges with reflection."""
-    original_height, original_width = img.shape[:2]
-    x, y, w, h = bbox
+    """Square crop around bbox (x1, y1, x2, y2), enlarged by bbox_expansion_factor.
 
-    w = w - x
-    h = h - y
+    Regions past the image edge are filled by reflection.
+    """
+    original_height, original_width = img.shape[:2]
+    x1, y1, x2, y2 = bbox
+    w, h = x2 - x1, y2 - y1
 
     if w <= 0 or h <= 0:
         raise ValueError("Invalid bbox dimensions")
 
     max_dim = max(w, h)
-    center_x = x + w / 2
-    center_y = y + h / 2
+    center_x = x1 + w / 2
+    center_y = y1 + h / 2
 
     x = int(center_x - max_dim * bbox_expansion_factor / 2)
     y = int(center_y - max_dim * bbox_expansion_factor / 2)
