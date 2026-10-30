@@ -13,30 +13,18 @@ def load_detector(
     nms_threshold: float = 0.3,
     top_k: int = 5000,
 ):
-    """Load face detector."""
+    """Load YuNet face detector. Raises if the model can't be loaded."""
     if not Path(model_path).exists():
-        return None
-
-    try:
-        return cv2.FaceDetectorYN.create(
-            str(model_path),
-            "",
-            input_size,
-            confidence_threshold,
-            nms_threshold,
-            top_k,
-        )
-    except Exception:
-        return None
+        raise FileNotFoundError(model_path)
+    return cv2.FaceDetectorYN.create(
+        str(model_path), "", input_size, confidence_threshold, nms_threshold, top_k
+    )
 
 
 def detect(
     image: np.ndarray, detector, min_face_size: int = 60, margin: int = 5
 ) -> List[Dict]:
     """Detect faces. Filter by min size and edge margin. Return list of {bbox, confidence}."""
-    if detector is None or image is None:
-        return []
-
     img_h, img_w = image.shape[:2]
     detector.setInputSize((img_w, img_h))
     _, faces = detector.detect(image)
@@ -48,9 +36,6 @@ def detect(
     for face in faces:
         x, y, w, h = face[:4].astype(int)
         conf = float(face[14])
-
-        if x < 0 or y < 0 or x + w > img_w or y + h > img_h:
-            continue
 
         dist_left = x
         dist_right = img_w - (x + w)

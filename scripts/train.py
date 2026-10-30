@@ -40,13 +40,10 @@ if __name__ == "__main__":
     )
     args = p.parse_args()
 
-    spoof_categories = [[0], [1, 2, 3, 7, 8, 9]]
-
     config = TrainConfig(
         crop_dir=args.crop_dir,
         input_size=args.input_size,
         batch_size=args.batch_size,
-        spoof_categories=spoof_categories,
         output_dir=args.output_dir,
     )
     config.set_job("MINIFAS")
