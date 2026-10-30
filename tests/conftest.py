@@ -1,8 +1,9 @@
 """Pytest fixtures for face-antispoof tests."""
 
-import pytest
-import numpy as np
 from pathlib import Path
+
+import numpy as np
+import pytest
 
 MODELS_DIR = Path(__file__).parent.parent / "models"
 DETECTOR_MODEL = MODELS_DIR / "detector_quantized.onnx"

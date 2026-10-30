@@ -34,9 +34,7 @@ class TrainConfig:
         self.input_size = input_size
         self.data_dir = os.path.join(DATA_PATH, crop_dir)
         self.train_path = os.path.join(self.data_dir, "train")
-        self.labels_path = os.path.join(
-            self.data_dir, "metas", "labels", "train_label.json"
-        )
+        self.labels_path = os.path.join(self.data_dir, "metas", "labels", "train_label.json")
         self.spoof_categories = spoof_categories
 
         self.num_classes = len(spoof_categories)

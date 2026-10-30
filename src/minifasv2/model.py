@@ -157,9 +157,7 @@ class FTGenerator(nn.Module):
 class MultiFTNet(nn.Module):
     """MiniFAS classifier; in train mode also returns the FT branch's spectrum prediction."""
 
-    def __init__(
-        self, num_channels=3, num_classes=2, embedding_size=128, conv6_kernel=(5, 5)
-    ):
+    def __init__(self, num_channels=3, num_classes=2, embedding_size=128, conv6_kernel=(5, 5)):
         super().__init__()
         self.model = MiniFASNetV2SE(
             embedding_size=embedding_size,

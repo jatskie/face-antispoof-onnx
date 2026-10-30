@@ -1,26 +1,23 @@
 """Train MiniFASNet V2 SE for face anti-spoofing (2-class: Real, Spoof)."""
 
-from src.minifasv2.config import TrainConfig
-from src.minifasv2.main import Trainer
 import argparse
 import os
+
+from src.minifasv2.config import TrainConfig
+from src.minifasv2.main import Trainer
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(
         description="Training Face-AntiSpoofing Model (2-class: Real, Spoof)"
     )
-    p.add_argument(
-        "--crop_dir", type=str, default="data", help="Subdir with cropped images"
-    )
+    p.add_argument("--crop_dir", type=str, default="data", help="Subdir with cropped images")
     p.add_argument(
         "--input_size",
         type=int,
         default=128,
         help="Input size of images passed to model",
     )
-    p.add_argument(
-        "--batch_size", type=int, default=256, help="Count of images in the batch"
-    )
+    p.add_argument("--batch_size", type=int, default=256, help="Count of images in the batch")
     p.add_argument(
         "--resume",
         type=str,
@@ -57,8 +54,6 @@ if __name__ == "__main__":
             print(f"Found existing checkpoint: {checkpoint_latest}")
             print('Resuming training automatically. Use --resume "" to start fresh.')
 
-    trainer = Trainer(
-        config, resume_from=resume_path, transfer_learning=args.transfer_learning
-    )
+    trainer = Trainer(config, resume_from=resume_path, transfer_learning=args.transfer_learning)
     trainer.train_model()
     print("Finished")

@@ -1,9 +1,9 @@
 """Face detection."""
 
+from pathlib import Path
+
 import cv2
 import numpy as np
-from typing import List, Dict
-from pathlib import Path
 
 
 def load_detector(
@@ -21,9 +21,7 @@ def load_detector(
     )
 
 
-def detect(
-    image: np.ndarray, detector, min_face_size: int = 60, margin: int = 5
-) -> List[Dict]:
+def detect(image: np.ndarray, detector, min_face_size: int = 60, margin: int = 5) -> list[dict]:
     """Detect faces. Filter by min size and edge margin. Return list of {bbox, confidence}."""
     img_h, img_w = image.shape[:2]
     detector.setInputSize((img_w, img_h))

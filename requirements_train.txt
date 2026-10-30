@@ -1,0 +1,11 @@
+# Training, export and data prep. CPU-only torch: add --index-url https://download.pytorch.org/whl/cpu
+-r requirements.txt
+onnx==1.23.2
+onnxsim==0.8.1
+pandas==3.1.0
+pillow==13.0.0
+scikit-learn==1.9.1
+tensorboardX==2.6.5
+torch==2.15.0
+torchvision==0.29.2
+tqdm==4.70.1
