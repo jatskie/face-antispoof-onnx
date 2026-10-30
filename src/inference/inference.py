@@ -2,11 +2,11 @@
 
 import numpy as np
 import onnxruntime as ort
-from typing import List, Dict
+
 from src.inference.preprocess import preprocess_batch
 
 
-def process_with_logits(raw_logits: np.ndarray, threshold: float) -> Dict:
+def process_with_logits(raw_logits: np.ndarray, threshold: float) -> dict:
     """Convert raw logits to real/spoof classification."""
     real_logit = float(raw_logits[0])
     spoof_logit = float(raw_logits[1])
@@ -24,11 +24,11 @@ def process_with_logits(raw_logits: np.ndarray, threshold: float) -> Dict:
 
 
 def infer(
-    face_crops: List[np.ndarray],
+    face_crops: list[np.ndarray],
     ort_session: ort.InferenceSession,
     input_name: str,
     model_img_size: int,
-) -> List[np.ndarray]:
+) -> list[np.ndarray]:
     """Run batch inference on cropped face images. Return list of logits per face."""
     if not face_crops:
         return []

@@ -23,11 +23,10 @@ def annotate(frame, detector, session, input_name, logit_threshold, args):
         for face in detect(frame_rgb, detector, margin=args.margin)
     ]
     crops = [
-        crop(frame_rgb, (x, y, x + w, y + h), args.bbox_expansion_factor)
-        for x, y, w, h in boxes
+        crop(frame_rgb, (x, y, x + w, y + h), args.bbox_expansion_factor) for x, y, w, h in boxes
     ]
     for (x, y, w, h), logits in zip(
-        boxes, infer(crops, session, input_name, args.model_img_size)
+        boxes, infer(crops, session, input_name, args.model_img_size), strict=True
     ):
         result = process_with_logits(logits, logit_threshold)
         color = GREEN if result["is_real"] else RED
@@ -57,9 +56,7 @@ def run_camera(args, annotate_frame, provider):
         if show_info:
             fps = len(frame_times) / sum(frame_times)
             for i, text in enumerate([f"FPS: {fps:.1f}", f"Provider: {provider}"]):
-                cv2.putText(
-                    frame, text, (5, 25 + 20 * i), cv2.FONT_HERSHEY_SIMPLEX, 0.5, CYAN, 1
-                )
+                cv2.putText(frame, text, (5, 25 + 20 * i), cv2.FONT_HERSHEY_SIMPLEX, 0.5, CYAN, 1)
 
         cv2.imshow("Liveness Detection", frame)
         key = cv2.waitKey(1) & 0xFF
@@ -92,9 +89,7 @@ def main():
         "--threshold", type=float, default=0.5, help="Real-probability threshold (0-1)"
     )
     parser.add_argument("--margin", type=int, default=5, help="Min px from frame edge")
-    parser.add_argument(
-        "--detector_model", default=str(MODELS_DIR / "detector_quantized.onnx")
-    )
+    parser.add_argument("--detector_model", default=str(MODELS_DIR / "detector_quantized.onnx"))
     parser.add_argument(
         "--liveness_model", default=str(MODELS_DIR / "best/98.20/best_model_quantized.onnx")
     )

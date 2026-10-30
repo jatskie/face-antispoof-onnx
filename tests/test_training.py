@@ -63,7 +63,9 @@ def test_resume_from_shipped_checkpoint(dataset):
     """Checkpoints from the original training run (old field names) still resume."""
     from pathlib import Path
 
-    checkpoint = Path(__file__).parent.parent / ("models/checkpoints/minifasv2 (128x128)/checkpoint_latest.pth")
+    checkpoint = Path(__file__).parent.parent / (
+        "models/checkpoints/minifasv2 (128x128)/checkpoint_latest.pth"
+    )
     if not checkpoint.exists():
         pytest.skip("training checkpoints not present (untracked from git)")
     trainer = Trainer(make_config(dataset, epochs=1))

@@ -17,9 +17,7 @@ if __name__ == "__main__":
 
     model = MultiFTNet(conv6_kernel=get_kernel(args.input_size, args.input_size))
     load_weights(model, args.checkpoint, include_ft=False)
-    state_dict = {
-        k: v for k, v in model.state_dict().items() if not k.startswith("FTGenerator.")
-    }
+    state_dict = {k: v for k, v in model.state_dict().items() if not k.startswith("FTGenerator.")}
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     torch.save(

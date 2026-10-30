@@ -1,6 +1,7 @@
 """Tests for inference module."""
 
 import numpy as np
+
 from src.inference import infer, process_with_logits
 
 

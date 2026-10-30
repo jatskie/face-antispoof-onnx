@@ -2,7 +2,8 @@
 
 import numpy as np
 import pytest
-from src.inference.preprocess import preprocess, preprocess_batch, crop
+
+from src.inference.preprocess import crop, preprocess, preprocess_batch
 
 
 class TestPreprocess:

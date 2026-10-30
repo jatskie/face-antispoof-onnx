@@ -3,7 +3,7 @@
 # Lightweight Face Antispoof (MiniFAS, ONNX)
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-black.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.8%2B-black)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-black)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0-black)](https://pytorch.org/)
 [![ONNX](https://img.shields.io/badge/ONNX-Runtime-black)](https://onnx.ai/)
 
@@ -53,7 +53,7 @@ not model quality. Accuracy claims remain based on the evaluation documented in
 
 ## Pre-trained
 
-Pre-trained models are available in the `models/` directory:
+Pre-trained models are in `models/best/98.20/` (previous best: `models/best/97.80/`):
 
 | Model | Size | Format | Use Case |
 |:------|:----:|:------:|:---------|
@@ -65,15 +65,13 @@ Pre-trained models are available in the `models/` directory:
 
 ## Why MiniFAS?
 
-The first version used MobileNetV4 (still in `src/mobilenetv4` for reference). It worked, but the model was larger than necessary and the training was more complex.
+The first version used MobileNetV4 (removed; see git history). It worked, but the model was larger than necessary and the training was more complex.
 
 MiniFAS turned out to be a better fit:
 - Smaller model, faster inference
 - Built specifically for anti-spoofing, not a general-purpose backbone
 - Uses Fourier Transform auxiliary loss during training—this helps the model learn frequency-domain patterns that distinguish real skin texture from printed photos and screen displays
 - SE (Squeeze-and-Excitation) blocks for adaptive channel attention
-
-> The MobileNetV4 code remains in `src/mobilenetv4/` for future experiments and reference. All current training uses MiniFASNet V2 SE.
 
 **[Architecture details →](docs/ARCHITECTURE.md)**
 
@@ -99,24 +97,17 @@ venv\Scripts\activate
 ```
 
 ### 2. Install dependencies
+
+Requires **Python 3.10+** (tested on 3.11). Versions are pinned.
+
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt        # inference + demo (numpy, opencv, onnxruntime)
+pip install -r requirements_train.txt  # + training, export, data prep (torch, ...)
+pip install -r requirements_dev.txt    # + pytest, ruff
 ```
 
-> [!IMPORTANT]
-> **Python Version:** This project requires **Python 3.8.0 or higher**.
-
-### Compatibility Note: Python 3.7.x
-Tested on **Python 3.7.16** and was confirmed that they are **not compatible**. Attempting to install dependencies on Python 3.7.x will result in a `subprocess-exited-with-error` during the `pip` installation of backend dependencies.
-
-**Error Example:**
-```text
-ERROR: Ignored the following versions that require a different python version: 0.1.0 Requires-Python >=3.9; ...
-ERROR: Could not find a version that satisfies the requirement puccinialin
-ERROR: No matching distribution found for puccinialin
-```
-
-> **Note:** To run on GPU, install `onnxruntime-gpu` instead of `onnxruntime`.
+> **Note:** To run on GPU, install `onnxruntime-gpu` instead of `onnxruntime`. For CPU-only torch,
+> add `--extra-index-url https://download.pytorch.org/whl/cpu`.
 
 ### Run the Demo
 
@@ -135,12 +126,16 @@ python demo.py --camera <index>
 python demo.py --image <path>
 ```
 
-Green bbox = real. 
+Green bbox = real.
 Red bbox = spoof.
+
+`--threshold` (default 0.5) is the real-probability cutoff; raise it for stricter checks.
 
 ---
 
 ## Training
+
+Run scripts as modules from the repo root (`python -m scripts.<name>`) so `src` is importable.
 
 ### 1. Prepare the Dataset
 
@@ -154,7 +149,7 @@ The dataset needs:
 Run the prep script to crop faces:
 
 ```bash
-python scripts/prepare_data.py \
+python -m scripts.prepare_data \
   --orig_dir <path> \
   --crop_dir <path> \
   --size <number> \
@@ -171,18 +166,20 @@ This reads images, crops faces using the bounding boxes (with some padding), res
 ### 2. Train
 
 ```bash
-python scripts/train.py \
+python -m scripts.train \
   --crop_dir <path> \
   --input_size <number> \
   --batch_size <number> \
   --output_dir <path>
 ```
 
-Checkpoints and TensorBoard logs go to `<output_dir>/MINIFAS/`.
+Checkpoints and TensorBoard logs go to `<output_dir>/MINIFAS/`. If `checkpoint_latest.pth`
+exists there, training resumes from it automatically.
 
-**Resume training:**
+**Resume from a specific checkpoint** (add `--transfer_learning` to load weights only, with a
+fresh optimizer):
 ```bash
-python scripts/train.py \
+python -m scripts.train \
   --crop_dir <path> \
   --resume <checkpoint_path>
 ```
@@ -192,7 +189,7 @@ python scripts/train.py \
 Extract clean model weights from checkpoint (removes optimizer state, FTGenerator, DataParallel prefixes):
 
 ```bash
-python scripts/prepare_best_model.py <epoch_checkpoint> \
+python -m scripts.prepare_best_model <epoch_checkpoint> \
   --output <path> \
   --input_size <number>
 ```
@@ -201,19 +198,24 @@ This creates a clean, inference-ready PyTorch model.
 
 ### 4. Export to ONNX
 
-**Regular ONNX export:**
 ```bash
-python scripts/export_onnx.py <checkpoint_path> \
+python -m scripts.export_onnx <checkpoint_path> \
   --input_size <number> \
-  --output <path>
+  --output <path.onnx> \
+  --quantize            # also write <path>_quantized.onnx (INT8)
 ```
 
-**Quantized ONNX:**
+---
+
+## Development
+
 ```bash
-python scripts/quantize_onnx.py <checkpoint_path> \
-  --input_size <number> \
-  --output <path>
+pytest          # includes golden-output tests: logits on assets/docs/face.jpg must not change
+ruff check . && ruff format --check .
 ```
+
+CI runs both on every push and pull request. Training checkpoints (`models/checkpoints/`) are
+not tracked in git.
 
 ---
 
@@ -224,10 +226,12 @@ python scripts/quantize_onnx.py <checkpoint_path> \
 ├── src/
 │   ├── detection/       # Face detection
 │   ├── inference/       # Model inference
-│   ├── minifasv2/       # Training code
-│   └── mobilenetv4/     # Legacy
+│   └── minifasv2/       # Model + training code
 ├── scripts/             # Data prep, training, export
-├── models/              # Pre-trained models
+├── tests/               # pytest suite (incl. golden outputs)
+├── models/
+│   ├── best/<acc>/      # Released .pth / .onnx / quantized .onnx
+│   └── detector*.onnx   # YuNet face detector
 ├── docs/                # Documentation
 └── assets/              # Demo assets & results
 ```
