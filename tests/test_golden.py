@@ -1,0 +1,58 @@
+"""Golden-output tests on a real face: catch any refactor that changes model results."""
+
+from pathlib import Path
+
+import cv2
+import numpy as np
+import pytest
+
+from src.detection import detect, load_detector
+from src.inference import crop, load_model, preprocess_batch
+
+ROOT = Path(__file__).parent.parent
+FACE_IMAGE = ROOT / "assets/docs/face.jpg"
+MODEL_DIR = ROOT / "models/best/98.20"
+
+# Recorded logits [real, spoof] for FACE_IMAGE before the refactor.
+EXPECTED_FP32 = np.array([4.40475, -4.40492])
+EXPECTED_INT8 = np.array([4.48281, -4.48115])
+
+
+@pytest.fixture(scope="module")
+def face_batch():
+    img = cv2.cvtColor(cv2.imread(str(FACE_IMAGE)), cv2.COLOR_BGR2RGB)
+    detector = load_detector(str(ROOT / "models/detector_quantized.onnx"), (320, 320))
+    faces = detect(img, detector)
+    assert len(faces) == 1
+    b = faces[0]["bbox"]
+    face = crop(img, (b["x"], b["y"], b["x"] + b["width"], b["y"] + b["height"]), 1.5)
+    return preprocess_batch([face], 128)
+
+
+@pytest.mark.parametrize(
+    ("model_file", "expected"),
+    [("best_model.onnx", EXPECTED_FP32), ("best_model_quantized.onnx", EXPECTED_INT8)],
+)
+def test_onnx_golden(face_batch, model_file, expected):
+    session, input_name = load_model(str(MODEL_DIR / model_file))
+    logits = session.run(None, {input_name: face_batch})[0][0]
+    np.testing.assert_allclose(logits, expected, atol=1e-3)
+
+
+def test_torch_matches_onnx(face_batch):
+    torch = pytest.importorskip("torch")
+    from src.minifasv2.model import MultiFTNet
+
+    state_dict = torch.load(MODEL_DIR / "best_model.pth", map_location="cpu")[
+        "model_state_dict"
+    ]
+    model = MultiFTNet(conv6_kernel=(8, 8))
+    result = model.load_state_dict(state_dict, strict=False)
+    # The shipped .pth has the training-only FT branch stripped; nothing else may be missing.
+    assert all("FTGenerator" in k for k in result.missing_keys)
+    assert not result.unexpected_keys
+
+    model.eval()
+    with torch.no_grad():
+        logits = model(torch.from_numpy(face_batch)).numpy()[0]
+    np.testing.assert_allclose(logits, EXPECTED_FP32, atol=1e-3)
