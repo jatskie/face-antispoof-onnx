@@ -6,7 +6,7 @@ from pathlib import Path
 
 MODELS_DIR = Path(__file__).parent.parent / "models"
 DETECTOR_MODEL = MODELS_DIR / "detector_quantized.onnx"
-LIVENESS_MODEL = MODELS_DIR / "best_model_quantized.onnx"
+LIVENESS_MODEL = MODELS_DIR / "best/98.20/best_model_quantized.onnx"
 
 
 @pytest.fixture(scope="session")
